@@ -1,8 +1,6 @@
 <template>
-  <div class="container">
-    <p class="bg-green-500" v-if="finiteAutomata">
-      This Finite Automata in {{ finiteAutomata }}
-    </p>
+  <div class="container pb-20">
+    <Toast position="top-right" />
     <div class="space-y-5 w-10/12 mx-auto">
       <div class="flex justify-evenly">
         <div class="space-y-4">
@@ -10,7 +8,7 @@
             <p>Number of State</p>
             <InputNumber
               v-model="state"
-              class="h-10"
+              class="h-10 w-full"
               mode="decimal"
               showButtons
               :min="0"
@@ -18,84 +16,31 @@
             />
           </div>
           <div v-if="state" class="space-y-2">
-            <div>
-              <p class="bg-green-500">
-                Which one in start state {{ startState }}
-              </p>
-              <select
+            <div class="flex items-center">
+              <p class="whitespace-nowrap pr-2">Start state</p>
+              <Dropdown
                 v-model="startState"
-                class="
-                  form-select
-                  appearance-none
-                  block
-                  w-full
-                  px-3
-                  py-1.5
-                  text-base
-                  font-normal
-                  text-gray-700
-                  bg-white bg-clip-padding bg-no-repeat
-                  border border-solid border-gray-300
-                  rounded
-                  transition
-                  ease-in-out
-                  m-0
-                  focus:text-gray-700
-                  focus:bg-white
-                  focus:border-blue-600
-                  focus:outline-none
-                "
-              >
-                <option
-                  v-for="item of state"
-                  :key="item.id"
-                  :value="`Q${item - 1}`"
-                >
-                  Q{{ item - 1 }}
-                </option>
-              </select>
+                :options="statesOption"
+                optionLabel="name"
+                optionValue="name"
+                class="w-full py-0 items-center text-sm h-11 w-52"
+                placeholder="Select a City"
+              />
               <p v-if="startState === ''" class="bg-red-500">
                 Please select start state
               </p>
             </div>
-            <div>
-              <p class="bg-green-500">
-                Which one in final state
-                {{ finalState.length > 0 ? finalState : "" }}
-              </p>
-              <select
+            <div class="flex items-center">
+              <p class="whitespace-nowrap pr-2">Final state</p>
+              <MultiSelect
                 v-model="finalState"
-                multiple
-                class="
-                  form-select
-                  appearance-none
-                  block
-                  w-full
-                  px-3
-                  py-1.5
-                  text-base
-                  font-normal
-                  text-gray-700
-                  bg-white bg-clip-padding bg-no-repeat
-                  border border-solid border-gray-300
-                  rounded
-                  transition
-                  ease-in-out
-                  m-0
-                  focus:text-gray-700
-                  focus:bg-white
-                  focus:border-blue-600
-                  focus:outline-none
-                "
-              >
-                <option
-                  v-for="item of state"
-                  :key="item.id"
-                  :value="`Q${item - 1}`"
-                >
-                  Q{{ item - 1 }}
-                </option>
-              </select>
+                :options="statesOption"
+                class="w-full py-0 items-center text-sm h-11 w-52"
+                optionValue="name"
+                optionLabel="name"
+                placeholder="Select a City"
+                :show-toggle-all="false"
+              />
               <p v-if="finalState.length === 0" class="text-red-500">
                 Please select final state
               </p>
@@ -106,17 +51,17 @@
           <p>Number of Symbols</p>
           <InputNumber
             v-model="symbol"
-            class="h-10"
+            class="h-10 w-full"
             mode="decimal"
             showButtons
             :min="0"
             :max="100"
           />
-          <div class="space-y-2">
+          <div class="space-y-1 pt-1">
             <div
               v-for="index in symbol"
               :key="index.id"
-              class="flex justify-around whitespace-nowrap"
+              class="flex justify-around items-center whitespace-nowrap"
             >
               <p>Symbols {{ index }}</p>
               <InputText
@@ -131,136 +76,176 @@
           </div>
         </div>
       </div>
-      <div v-if="!loading">
-        <div class="flex justify-center text-center">
-          <div>
-            <div class="border border-gray-600 h-10 p-2 py-1">
-              States \ Symbols
-            </div>
-            <div
-              v-for="index in state"
-              :key="index.id"
-              class="border border-gray-600 h-10 py-1"
-            >
-              Q<sub>{{ index - 1 }}</sub>
-            </div>
-          </div>
-          <div>
-            <div class="flex justify-start h-10">
-              <p
-                v-for="item in symbols"
-                :key="item.id"
-                class="border border-gray-600 w-20 py-1 bg-"
+
+      <div v-if="!loading" class="w-full flex justify-center">
+        <div>
+          <Button
+            class="p-button p-button-sm py-5"
+            :class="useEpsilon ? 'p-button-danger' : ''"
+            @click="showColumnEpsilons()"
+            >{{ !useEpsilon ? "Use" : "Remove" }} Epsilon( ε )</Button
+          >
+          <div class="flex text-center">
+            <div>
+              <div class="border border-gray-600 h-10 p-2 py-1">
+                States \ Symbols
+              </div>
+              <div
+                v-for="index in state"
+                :key="index.id"
+                class="border border-gray-600 h-10 py-1"
               >
-                {{ item }}
-              </p>
-              <p v-if="useEpsilon" class="border border-gray-600 w-20 py-1">
-                Epsilon
-              </p>
-              <Button
-                class="p-button p-button-sm"
-                :class="useEpsilon ? 'p-button-danger' : ''"
-                @click="showColumnEpsilons()"
-                >{{ !useEpsilon ? "Use " : "Remove " }}Epsilon( ε )</Button
-              >
+                Q<sub>{{ index - 1 }}</sub>
+              </div>
             </div>
-            <div class="h-10">
-              <div v-for="i in state" :key="i.id" class="flex justify-start">
-                <input-text
-                  v-for="item in testSymbol(i - 1)"
-                  :key="item"
-                  type="text"
-                  :placeholder="item"
-                  v-model="array[item]"
-                  class="h-10 w-20"
-                />
-                <div v-if="useEpsilon">
+            <div>
+              <div class="flex justify-start h-10">
+                <p
+                  v-for="item in symbols"
+                  :key="item.id"
+                  class="border border-gray-600 w-20 py-1"
+                >
+                  {{ item }}
+                </p>
+                <p v-if="useEpsilon" class="border border-gray-600 w-20 py-1">
+                  Epsilon
+                </p>
+              </div>
+              <div class="h-10">
+                <div v-for="i in state" :key="i.id" class="flex justify-start">
                   <input-text
-                    v-for="item in getEpsilon(i - 1)"
+                    v-for="item in testSymbol(i - 1)"
                     :key="item"
                     type="text"
                     :placeholder="item"
-                    v-model="epsilons[item]"
+                    v-model="array[item]"
                     class="h-10 w-20"
                   />
+                  <div v-if="useEpsilon">
+                    <input-text
+                      v-for="item in getEpsilon(i - 1)"
+                      :key="item"
+                      type="text"
+                      :placeholder="item"
+                      v-model="epsilons[item]"
+                      class="h-10 w-20"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <div class="flex justify-center mt-10">
-          <div>
-            <p>Process String</p>
-            <div>
-              <InputText
-                type="text"
-                v-model="stringProcess"
-                @keyup="calculate()"
-                class="h-10"
-              />
-              <Button class="p-button p-button-sm" @click="calculate()"
-                >Result</Button
-              >
-              <Button class="p-button p-button-sm" @click="minimization()"
-                >minimization</Button
-              >
-            </div>
-          </div>
-        </div>
-        <!-- result -->
-        <div
-          :class="{
-            'bg-green-500': result === 'Accept',
-            'bg-red-500': result === 'Reject',
-          }"
-        >
-          {{ result || "" }}
-        </div>
       </div>
       <div v-else class="mx-auto">
         <ProgressSpinner />
       </div>
-      {{ array }}
-      {{ epsilons }}
-      --sssssssssssss--
-      {{ results }}
-      <!-- =kk= -->
-      {{ stateMinimization }}
+      <div class="flex flex-col mx-auto w-96 mt-10 space-y-5">
+        <div>
+          <p>Process String</p>
+          <div>
+            <InputText type="text" v-model="stringProcess" class="h-10" />
+            <Button class="p-button p-button-sm" @click="calculate()"
+              >Process String
+            </Button>
+          </div>
+        </div>
+        <div class="space-x-2">
+          <Button class="p-button p-button-sm" @click="Test_FA_is_DFA_or_NFA()"
+            >Test FA</Button
+          >
+          <Button
+            v-if="testFA"
+            :disabled="finiteAutomata === 'NFA'"
+            class="p-button p-button-sm"
+            @click="minimization()"
+            >Minimization</Button
+          >
+          <Button
+            v-if="testFA"
+            :disabled="finiteAutomata === 'DFA'"
+            class="p-button p-button-sm"
+            @click="calculateNFA(true)"
+            >Convert NFA to DFA
+          </Button>
+        </div>
+      </div>
+      <!-- {{ array }} -->
+      <!-- {{ epsilons }} -->
+      <!-- {{ results }} -->
+      <!-- {{ stateMinimization }} -->
+    </div>
+    <div class="mt-10">
+      <div v-if="convertFromNFAtoDFA">
+        <h1 class="text-center text-5xl font-bold">
+          Result for converting form NAF to DFA
+        </h1>
+        <result
+          :startState="startState"
+          :symbols="symbols"
+          :array="arrayConvertNfa"
+          :states="stateConvertNfa"
+          :finalState="finalStateConvertNfa"
+        />
+      </div>
+      <div v-if="minimizationStatus">
+        <h1 class="text-center text-5xl font-bold">
+          Result for Minimization DFA
+        </h1>
+        <result
+          :startState="startState"
+          :symbols="symbols"
+          :array="arrayAfterMinimization"
+          :states="stateAfterMinimization"
+          :finalState="finalStateAfterMinimization"
+        />
+      </div>
     </div>
   </div>
 </template>
 
 <script>
+import result from "../components/result.vue";
 export default {
+  components: { result },
   name: "IndexPage",
   data() {
     return {
+      testFA: false,
       finiteAutomata: null,
-      result: null,
       startState: "Q0",
-      finalState: ["Q4"],
+      // finalState: ["Q4"],
+      finalState: ["Q3"],
+      // finalState: ["Q1"],
       // finalState: ["Q2"],
       // symbol: 2,
       symbol: 2,
       useEpsilon: false,
       error: false,
       // state: null,
+      // state: 5,
       // state: 8,
-      state: 5,
+      state: 4,
+      // state: 3,
       stringProcess: null,
-      symbols: ["0", "1"],
-      // symbols: ["a", "b"],
+      // symbols: ["0", "1"],
+      symbols: ["a", "b"],
       array: {
-        Q00: "Q1",
-        Q01: "Q3",
-        Q10: "Q2",
-        Q11: "Q4",
-        Q20: "Q1",
-        Q21: "Q4",
-        Q30: "Q2",
-        Q31: "Q4",
-        Q40: "Q4",
-        Q41: "Q4",
+        // Q00: "Q1",
+        // Q01: "Q3",
+        // Q10: "Q2",
+        // Q11: "Q4",
+        // Q20: "Q1",
+        // Q21: "Q4",
+        // Q30: "Q2",
+        // Q31: "Q4",
+        // Q40: "Q4",
+        // Q41: "Q4",
+
+        Q0a: "Q0,Q1",
+        Q0b: "Q0",
+        Q1b: "Q2",
+        Q2b: "Q3",
       },
       // array: {
       //   Q0a: "Q1",
@@ -295,6 +280,16 @@ export default {
       stateMinimization: [],
       interaction: [],
       Iter2: [],
+
+      convertFromNFAtoDFA: false,
+      stateConvertNfa: null,
+      arrayConvertNfa: {},
+      finalStateConvertNfa: [],
+
+      minimizationStatus: false,
+      stateAfterMinimization: null,
+      arrayAfterMinimization: {},
+      finalStateAfterMinimization: [],
     };
   },
 
@@ -310,12 +305,18 @@ export default {
         this.error = false;
       }
     },
-    // symbol() {
-    //   // Clear all symbols when number of symbol chang
-    //   this.symbols = [];
-    // },
   },
+
   computed: {
+    statesOption() {
+      const option = [];
+      for (let i = 0; i < this.state; i++) {
+        option.push({ name: `Q${i}` });
+      }
+
+      return option;
+    },
+
     loading() {
       if (this.error) {
         return true;
@@ -332,7 +333,36 @@ export default {
       return true;
     },
   },
+
   methods: {
+    Test_FA_is_DFA_or_NFA() {
+      window.localStorage.setItem("name", "Obaseki Nosasasdj" + this.state);
+
+      if (this.array && this.startState && this.finalState) {
+        let NFA = Object.keys(this.array).find((key) =>
+          this.array[key].includes(",")
+        );
+        // Test if a FA is deterministic or non-deterministic
+        if (this.useEpsilon || NFA) {
+          this.finiteAutomata = "NFA";
+        } else {
+          this.finiteAutomata = "DFA";
+        }
+
+        this.testFA = true;
+
+        this.alertMessage(`This Finite Automata is ${this.finiteAutomata}`);
+      }
+    },
+
+    alertMessage(message, status) {
+      this.$toast.add({
+        severity: status ? status : "success",
+        summary: message,
+        life: 3000,
+      });
+    },
+
     calculate() {
       if (
         this.array &&
@@ -348,10 +378,10 @@ export default {
         );
         // Test if a FA is deterministic or non-deterministic
         if (this.useEpsilon || NFA) {
-          this.finiteAutomata = "Non-deterministic ( NFA )";
+          this.finiteAutomata = "NFA";
           this.calculateNFA();
         } else {
-          this.finiteAutomata = "Deterministic ( DFA )";
+          this.finiteAutomata = "DFA";
           this.calculateDFA();
         }
       }
@@ -382,8 +412,8 @@ export default {
           }
         }
       }
-      console.log("ValueHalfTriangle");
-      console.log(ValueHalfTriangle);
+      // console.log("ValueHalfTriangle");
+      // console.log(ValueHalfTriangle);
       const Iter1 = [];
       for (let k = 0; k < ValueHalfTriangle.length; k++) {
         // console.log("ValueHalfTriangle[k]");
@@ -398,8 +428,9 @@ export default {
         }
       }
 
-      console.log("Iter1");
-      console.log(Iter1);
+      // console.log("Iter1");
+      // console.log(Iter1);
+      // copy array
       this.interaction = Iter1.slice();
 
       if (Iter1.length > 0) {
@@ -407,8 +438,8 @@ export default {
         // console.log("this.Iter2");
       }
       this.interaction.sort();
-      console.log("this.interaction");
-      console.log(this.interaction);
+      // console.log("this.interaction");
+      // console.log(this.interaction);
 
       let mini = this.getMinimizationStep3(
         this.interaction,
@@ -439,7 +470,34 @@ export default {
           }
         }
       }
+
+      let tmpFinalState = [];
+      for (let state in transaction) {
+        for (let i = 0; i < this.finalState.length; i++) {
+          if (transaction[state].includes(this.finalState[i])) {
+            // check if the state already have
+            if (!tmpFinalState.includes(state)) {
+              tmpFinalState.push(state);
+            }
+          }
+        }
+      }
+
+      console.log("transaction");
+      console.log();
+      console.log("result");
       console.log(result);
+      console.log("tmpFinalState");
+      console.log(tmpFinalState);
+
+      // get number of state
+      const lengthOfState = Object.keys(transaction).length;
+
+      this.stateAfterMinimization = lengthOfState;
+      this.arrayAfterMinimization = result;
+      this.finalStateAfterMinimization = tmpFinalState;
+
+      this.minimizationStatus = true;
     },
 
     getMinimizationStep3(interaction, arrayRow, arrayColumn) {
@@ -529,6 +587,22 @@ export default {
       }
 
       return transaction;
+    },
+
+    getMinimization(state) {
+      for (let i = 0; i < this.symbols.length; i++) {
+        let sateTran = `${state}${this.symbols[i]}`; /// EX: Q0a , Q0b
+        for (let item in this.array) {
+          // EX: if = Q0a get value of Q0a = Q0
+          if (item === sateTran) {
+            const check = this.stateMinimization.includes(this.array[item]);
+            if (!check) {
+              this.stateMinimization.push(this.array[item]);
+              this.getMinimization(this.array[item]);
+            }
+          }
+        }
+      }
     },
 
     getInteraction(ValueHalfTriangle) {
@@ -624,23 +698,7 @@ export default {
       }
     },
 
-    getMinimization(state) {
-      for (let i = 0; i < this.symbols.length; i++) {
-        let sateTran = `${state}${this.symbols[i]}`; /// EX: Q0a , Q0b
-        for (let item in this.array) {
-          // EX: if = Q0a get value of Q0a = Q0
-          if (item === sateTran) {
-            const check = this.stateMinimization.includes(this.array[item]);
-            if (!check) {
-              this.stateMinimization.push(this.array[item]);
-              this.getMinimization(this.array[item]);
-            }
-          }
-        }
-      }
-    },
-
-    calculateNFA() {
+    calculateNFA(noCalculate) {
       console.log("N F A");
       this.convertNFAtoDFA([this.startState], false);
       let object = [];
@@ -648,8 +706,8 @@ export default {
         object[i] = this.convertNFAtoDFA(this.results[i], true);
       }
       //  object; /// [ [ [] ] ]
-      console.log("object");
-      console.log(object);
+      // console.log("object");
+      // console.log(object);
 
       let array = {};
       let finalStates = [];
@@ -680,7 +738,14 @@ export default {
         // array[] = object[stateIndex];
       }
 
-      this.calculateDFA(array, finalStates);
+      if (noCalculate) {
+        this.stateConvertNfa = object.length;
+        this.arrayConvertNfa = array;
+        this.finalStateConvertNfa = finalStates;
+        this.convertFromNFAtoDFA = true;
+      } else {
+        this.calculateDFA(array, finalStates);
+      }
     },
 
     convertNFAtoDFA(states, getReturn) {
@@ -846,12 +911,12 @@ export default {
         console.log("showResult" + state);
         // if (this.finalState.includes(state)) {
         if (finalState.includes(state)) {
-          this.result = "Accept";
+          this.alertMessage("Accept");
         } else {
-          this.result = "Reject";
+          this.alertMessage("Reject", "error");
         }
       } else {
-        this.result = "Reject";
+        this.alertMessage("Reject", "error");
       }
     },
 
