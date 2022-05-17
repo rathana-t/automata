@@ -114,7 +114,7 @@
               <div class="h-10">
                 <div v-for="i in state" :key="i.id" class="flex justify-start">
                   <input-text
-                    v-for="item in testSymbol(i - 1)"
+                    v-for="item in getTheTransaction(i - 1)"
                     :key="item"
                     type="text"
                     :placeholder="item"
@@ -170,10 +170,6 @@
           </Button>
         </div>
       </div>
-      <!-- {{ array }} -->
-      <!-- {{ epsilons }} -->
-      <!-- {{ results }} -->
-      <!-- {{ stateMinimization }} -->
     </div>
     <div class="mt-10">
       <div v-if="convertFromNFAtoDFA">
@@ -213,68 +209,18 @@ export default {
     return {
       testFA: false,
       finiteAutomata: null,
-      startState: "Q0",
-      // finalState: ["Q4"],
-      finalState: ["Q3"],
-      // finalState: ["Q1"],
-      // finalState: ["Q2"],
-      // symbol: 2,
-      symbol: 2,
+
+      startState: null,
+      finalState: [],
+      symbol: null,
+
       useEpsilon: false,
       error: false,
-      // state: null,
-      // state: 5,
-      // state: 8,
-      state: 4,
-      // state: 3,
+      state: null,
       stringProcess: null,
-      // symbols: ["0", "1"],
-      symbols: ["a", "b"],
-      array: {
-        // Q00: "Q1",
-        // Q01: "Q3",
-        // Q10: "Q2",
-        // Q11: "Q4",
-        // Q20: "Q1",
-        // Q21: "Q4",
-        // Q30: "Q2",
-        // Q31: "Q4",
-        // Q40: "Q4",
-        // Q41: "Q4",
+      symbols: [],
+      array: {},
 
-        Q0a: "Q0,Q1",
-        Q0b: "Q0",
-        Q1b: "Q2",
-        Q2b: "Q3",
-      },
-      // array: {
-      //   Q0a: "Q1",
-      //   Q0b: "Q5",
-
-      //   Q1a: "Q6",
-      //   Q1b: "Q2",
-
-      //   Q2a: "Q0",
-      //   Q2b: "Q2",
-
-      //   Q3a: "Q2",
-      //   Q3b: "Q6",
-
-      //   Q4a: "Q7",
-      //   Q4b: "Q5",
-
-      //   Q5a: "Q2",
-      //   Q5b: "Q6",
-
-      //   Q6a: "Q6",
-      //   Q6b: "Q4",
-
-      //   Q7a: "Q6",
-      //   Q7b: "Q2",
-      // },
-      // array: { Q00: "Q0", Q01: "Q2", Q21: "Q2,Q1" },
-      // array: { Q0a: "Q0", Q0b: "Q0,Q1", Q2b: "Q3", Q2a: "Q3" },
-      // epsilons: { Q1Eps: "Q2" },
       epsilons: {},
       results: [],
       stateMinimization: [],
@@ -298,6 +244,7 @@ export default {
       // check if array have duplicate value
       let findDuplicates = (arr) =>
         arr.filter((item, index) => arr.indexOf(item) != index);
+      // check if user input duplicate symbol
       let tmp = findDuplicates(this.symbols);
       if (tmp.length > 0) {
         this.error = true;
@@ -308,6 +255,7 @@ export default {
   },
 
   computed: {
+    // generate transaction
     statesOption() {
       const option = [];
       for (let i = 0; i < this.state; i++) {
@@ -317,6 +265,7 @@ export default {
       return option;
     },
 
+    // waiting until have number of state && symbols
     loading() {
       if (this.error) {
         return true;
@@ -335,6 +284,7 @@ export default {
   },
 
   methods: {
+    // function for test if FA is DFA or NFA
     Test_FA_is_DFA_or_NFA() {
       window.localStorage.setItem("name", "Obaseki Nosasasdj" + this.state);
 
@@ -355,6 +305,7 @@ export default {
       }
     },
 
+    // function for alert message
     alertMessage(message, status) {
       this.$toast.add({
         severity: status ? status : "success",
@@ -363,6 +314,7 @@ export default {
       });
     },
 
+    // function for calculate
     calculate() {
       if (
         this.array &&
@@ -387,6 +339,7 @@ export default {
       }
     },
 
+    // function for minimization
     minimization() {
       let state = this.startState;
       this.stateMinimization.push(state);
@@ -483,13 +436,6 @@ export default {
         }
       }
 
-      console.log("transaction");
-      console.log();
-      console.log("result");
-      console.log(result);
-      console.log("tmpFinalState");
-      console.log(tmpFinalState);
-
       // get number of state
       const lengthOfState = Object.keys(transaction).length;
 
@@ -500,6 +446,7 @@ export default {
       this.minimizationStatus = true;
     },
 
+    // minimization step 3
     getMinimizationStep3(interaction, arrayRow, arrayColumn) {
       // console.log(interaction);
       let transaction = {};
@@ -591,10 +538,12 @@ export default {
 
     getMinimization(state) {
       for (let i = 0; i < this.symbols.length; i++) {
-        let sateTran = `${state}${this.symbols[i]}`; /// EX: Q0a , Q0b
+        /// EX: Q0 and a => Q0a
+        let sateTran = `${state}${this.symbols[i]}`;
         for (let item in this.array) {
           // EX: if = Q0a get value of Q0a = Q0
           if (item === sateTran) {
+            // check if state already exist
             const check = this.stateMinimization.includes(this.array[item]);
             if (!check) {
               this.stateMinimization.push(this.array[item]);
@@ -605,13 +554,14 @@ export default {
       }
     },
 
+    // function for get interaction
     getInteraction(ValueHalfTriangle) {
       let Iter2 = [];
       for (let k = 0; k < ValueHalfTriangle.length; k++) {
-        // console.log("ValueHalfTriangle[k]");
         // console.log(ValueHalfTriangle[k]);
         const checkValueNotInIter1 = false;
         for (let l = 0; l < this.interaction.length; l++) {
+          // check if two array are the same
           if (
             JSON.stringify(this.interaction[l]) ===
             JSON.stringify(ValueHalfTriangle[k])
@@ -619,9 +569,9 @@ export default {
             checkValueNotInIter1 = true;
           }
         }
+        // if two array are not the same
         if (!checkValueNotInIter1) {
           for (let i = 0; i < this.symbols.length; i++) {
-            // merge string
             let teatStates = [];
             for (let j = 0; j < ValueHalfTriangle[k].length; j++) {
               let stateTran = ValueHalfTriangle[k][j] + this.symbols[i];
@@ -634,6 +584,7 @@ export default {
             }
 
             for (let l = 0; l < this.interaction.length; l++) {
+              // check if two array are the same
               const checking = this.getCheckArray(
                 this.interaction[l],
                 teatStates
@@ -666,25 +617,30 @@ export default {
       // copy array
       let tmpArr1 = array1.slice();
       let tmpArr2 = array2.slice();
+      // sort array
       tmpArr1.sort();
       tmpArr2.sort();
+      // check if the same. EX: [1,2,3] === [1,2,3]
       if (JSON.stringify(tmpArr1) === JSON.stringify(tmpArr2)) {
         return true;
       }
       return false;
     },
 
+    // function for help check to get only a half to triangle
     halfTriangle(string1, string2) {
+      // EX: Q1 , Q2 or  Q1 and Q2
       let test = [string1, string2].sort();
-      // console.log("string1, string2");
-      // console.log("test sort");
+      // after short ==  Q1 and Q2
 
+      // if string2 == Q1 it false
       if (test[0] === string2) {
         return false;
       }
       return true;
     },
 
+    //function for remove first or last value
     removeIndexInArray(arr, indexRemove) {
       // copy array
       let tmpArr = arr.slice();
@@ -698,17 +654,21 @@ export default {
       }
     },
 
+    // function for calculate NFA
     calculateNFA(noCalculate) {
       console.log("N F A");
+      // before calculate we have to convert it to DFA and calculate it on DFA
+      // call function to convert from NFA to DFA and no need return
       this.convertNFAtoDFA([this.startState], false);
       let object = [];
+
       for (let i = 0; i < this.results.length; i++) {
         object[i] = this.convertNFAtoDFA(this.results[i], true);
       }
       //  object; /// [ [ [] ] ]
-      // console.log("object");
       // console.log(object);
 
+      // declare array for transaction
       let array = {};
       let finalStates = [];
       for (let stateIndex = 0; stateIndex < object.length; stateIndex++) {
@@ -726,6 +686,7 @@ export default {
               }
             }
 
+            // check if two array are the same
             if (
               JSON.stringify(this.results[state]) ===
               JSON.stringify(object[stateIndex][symbol])
@@ -735,15 +696,17 @@ export default {
             }
           }
         }
-        // array[] = object[stateIndex];
       }
 
+      // if noCalculate == true it mean just want to convert from NFA to DFA
       if (noCalculate) {
+        // set result
         this.stateConvertNfa = object.length;
         this.arrayConvertNfa = array;
         this.finalStateConvertNfa = finalStates;
         this.convertFromNFAtoDFA = true;
       } else {
+        // if noCalculate == null ro false it mean calculate NFA
         this.calculateDFA(array, finalStates);
       }
     },
@@ -758,6 +721,7 @@ export default {
         // { Q0 , Q1 }
         // a
         for (let j = 0; j < theState.length; j++) {
+          // EX: stateTran =  Q0 and a => Q0a
           let stateTran = `${theState[j]}${this.symbols[i]}`;
 
           // theState = [ Q0 , Q1 , Q2 ]
@@ -786,7 +750,11 @@ export default {
             }
           } // for item
 
+          // if doesn't have transaction, EX: Q0->a and no state,
+          // so just use the Epsilon,
+          // and if Eps no state we also don't move the state
           if (!haveTran) {
+            // stateTranTest = Q0 -> Eps = Q0Eap
             let stateTranTest = `${theState[j]}Eps`;
             //  epsilons = [ Q0Eps , Q1Eps , Q2Eps ]
             for (let item in this.epsilons) {
@@ -802,6 +770,7 @@ export default {
               }
             }
 
+            // if NewStates doesn't have EmptySet, just store it
             if (!NewStates.find((item) => item === "EmptySet")) {
               if (!NewStates.length > 0) {
                 NewStates.push("EmptySet");
@@ -818,6 +787,7 @@ export default {
         }
       } // for i
 
+      // if getReturn == null || false
       if (!getReturn) {
         for (let index = 0; index < convertNFA.length; index++) {
           if (!this.checkIfAlreadyHave(this.results, convertNFA[index])) {
@@ -826,10 +796,12 @@ export default {
           }
         }
       } else {
+        //  if getReturn == true || have value
         return convertNFA;
       }
     },
 
+    // function for check if array(smallArray) in 2 dimension array(bigArray)
     checkIfAlreadyHave(bigArray, smallArray) {
       let tmpBigArr = bigArray.slice();
       let tmpSmallArr = smallArray.slice();
@@ -843,6 +815,7 @@ export default {
       return false;
     },
 
+    // function for get the transaction for Epsilon
     getStateEps(NewStates) {
       // tempState = [ Q0 , Q1 , Q2 , Q3 ]
       let tempState = [];
@@ -880,6 +853,7 @@ export default {
       return tempState;
     },
 
+    // function for calculate DFA
     calculateDFA(array, finalStates) {
       let valueArray = array || this.array;
       let valueFinalStates = finalStates || this.finalStates;
@@ -902,9 +876,11 @@ export default {
           }
         }
       }
+      //  call function to show the result
       this.showResult(state, valueFinalStates);
     },
 
+    // function for show the result
     showResult(state, valueFinalStates) {
       let finalState = valueFinalStates || this.finalState;
       if (state) {
@@ -920,20 +896,25 @@ export default {
       }
     },
 
-    testSymbol(index) {
+    // function for get The Transaction, EX: Q0a, Q0b, Q0c
+    getTheTransaction(index) {
       let num = [];
       for (let i = 0; i < this.symbols.length; i++) {
+        // Q0 and a = Q0a
         num[i] = `Q${index}` + this.symbols[i];
       }
       return num;
     },
 
+    // function for get The Transaction on Epsilon, EX: Q0Eps, Q0Eps, Q0Eps
     getEpsilon(index) {
       let num = [];
+      // Q0 and Eps = Q0Eps
       num[0] = `Q${index}Eps`;
       return num;
     },
 
+    // function for show Epsilons field input for user input
     showColumnEpsilons() {
       this.useEpsilon = !this.useEpsilon;
       if (!this.useEpsilon) {
