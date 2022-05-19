@@ -75,9 +75,6 @@
         icon="pi pi-save"
         label="Save to Database"
       ></Button>
-    </div>
-
-    <div class="space-y-5 w-10/12 mx-auto">
       <Button
         :disabled="EditingFA"
         @click="clearForm()"
@@ -85,7 +82,10 @@
       >
         Clear Form
       </Button>
-      <div class="flex justify-evenly">
+    </div>
+
+    <div class="space-y-5 w-10/12 p-5">
+      <div class="flex justify-start space-x-4">
         <div class="space-y-4">
           <div>
             <p>Number of State</p>
