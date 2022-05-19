@@ -66,7 +66,6 @@ export default {
       required: true,
     },
   },
-  data() {},
 
   methods: {
     testSymbol(index) {

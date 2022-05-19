@@ -3,6 +3,12 @@ export default {
 
     target: 'static',
 
+    publicRuntimeConfig: {
+        axios: {
+            baseURL: 'http://127.0.0.1:8000/api'
+        }
+    },
+
     head: {
         title: 'Project_Automata',
         htmlAttrs: {

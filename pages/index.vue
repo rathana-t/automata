@@ -1,7 +1,90 @@
 <template>
   <div class="container pb-20">
     <Toast position="top-right" />
+    <Dialog
+      header="Finite Automata"
+      :visible.sync="displayDialog"
+      position="top"
+      :containerStyle="{ width: '100vw' }"
+    >
+      <table class="table-auto w-full text-center">
+        <tr>
+          <th class="border-collapse border p-3 bg-blue-700 text-white">id</th>
+          <th class="border-collapse border p-3">states</th>
+          <th class="border-collapse border p-3">start state</th>
+          <th class="border-collapse border p-3">final state</th>
+          <th class="border-collapse border p-3">symbols</th>
+          <th class="border-collapse border p-3">symbol</th>
+          <th class="border-collapse border p-3">transaction</th>
+          <th class="border-collapse border p-3">Epsilon</th>
+          <th class="border-collapse border p-3">Action</th>
+        </tr>
+        <tr v-for="item in dataFromDatabases" :key="item.id">
+          <td class="border-collapse border bg-blue-700 text-white">
+            {{ item.id }}
+          </td>
+          <td class="border-collapse border">{{ item.number_of_state }}</td>
+          <td class="border-collapse border">{{ item.start_state }}</td>
+          <td class="border-collapse border">{{ item.final_state }}</td>
+          <td class="border-collapse border">{{ item.number_of_symbol }}</td>
+          <td class="border-collapse border">{{ item.symbol }}</td>
+          <td class="border-collapse border w-96">{{ item.transaction }}</td>
+          <td class="border-collapse border w-52">
+            {{ item.transaction_epsilon }}
+          </td>
+          <td class="border-collapse border">
+            <div class="flex justify-evenly">
+              <Button
+                class="p-button p-button-sm"
+                icon="pi pi-replay"
+                label="Load"
+                @click="loadFiniteAutomata(item)"
+              >
+              </Button>
+              <Button
+                class="p-button p-button-sm"
+                icon="pi pi-pencil"
+                @click="editFiniteAutomata(item)"
+              >
+              </Button>
+              <Button
+                class="p-button p-button-sm p-button-danger"
+                icon="pi pi-trash"
+                @click="deleteFiniteAutomata(item)"
+              >
+              </Button>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </Dialog>
+
+    <div class="absolute top-2 right-2">
+      <Button
+        class="p-button p-button-sm"
+        :disabled="EditingFA"
+        @click="getListFromDatabases()"
+      >
+        List finite saved
+      </Button>
+      <Button
+        type="button"
+        class="p-button p-button-sm p-button-success"
+        @click="saveToDatabase()"
+        :disabled="EditingFA"
+        icon="pi pi-save"
+        label="Save to Database"
+      ></Button>
+    </div>
+
     <div class="space-y-5 w-10/12 mx-auto">
+      <Button
+        :disabled="EditingFA"
+        @click="clearForm()"
+        class="p-button p-button-sm p-button-danger"
+      >
+        Clear Form
+      </Button>
       <div class="flex justify-evenly">
         <div class="space-y-4">
           <div>
@@ -24,12 +107,12 @@
                 optionLabel="name"
                 optionValue="name"
                 class="w-full py-0 items-center text-sm h-11 w-52"
-                placeholder="Select a City"
+                placeholder="Select state"
               />
-              <p v-if="startState === ''" class="bg-red-500">
-                Please select start state
-              </p>
             </div>
+            <p v-if="!startState" class="text-red-500">
+              Please select start state
+            </p>
             <div class="flex items-center">
               <p class="whitespace-nowrap pr-2">Final state</p>
               <MultiSelect
@@ -38,13 +121,13 @@
                 class="w-full py-0 items-center text-sm h-11 w-52"
                 optionValue="name"
                 optionLabel="name"
-                placeholder="Select a City"
+                placeholder="Select state"
                 :show-toggle-all="false"
               />
-              <p v-if="finalState.length === 0" class="text-red-500">
-                Please select final state
-              </p>
             </div>
+            <p v-if="finalState.length === 0" class="text-red-500">
+              Please select final state
+            </p>
           </div>
         </div>
         <div>
@@ -137,10 +220,20 @@
           </div>
         </div>
       </div>
-      <div v-else class="mx-auto">
-        <ProgressSpinner />
+      <div v-else class="flex justify-center">
+        <div>
+          <ProgressSpinner
+            style="width: 50px; height: 50px"
+            strokeWidth="8"
+            fill="#EEEEEE"
+          />
+          <p>waiting user input</p>
+        </div>
       </div>
-      <div class="flex flex-col mx-auto w-96 mt-10 space-y-5">
+      <div
+        v-if="!EditingFA && !loading"
+        class="flex flex-col mx-auto w-96 mt-10 space-y-5"
+      >
         <div>
           <p>Process String</p>
           <div>
@@ -170,6 +263,14 @@
           </Button>
         </div>
       </div>
+    </div>
+    <div class="flex justify-center">
+      <Button
+        v-if="EditingFA"
+        class="p-button p-button-sm p-button-success"
+        @click="saveToDatabase('update')"
+        >Save Update
+      </Button>
     </div>
     <div class="mt-10">
       <div v-if="convertFromNFAtoDFA">
@@ -201,12 +302,18 @@
 </template>
 
 <script>
+import axios from "axios";
 import result from "../components/result.vue";
 export default {
   components: { result },
   name: "IndexPage",
   data() {
     return {
+      dataFromDatabases: null,
+      displayDialog: false,
+      EditingFA: false,
+      IdTmpForUpdate: null,
+
       testFA: false,
       finiteAutomata: null,
 
@@ -236,6 +343,10 @@ export default {
       stateAfterMinimization: null,
       arrayAfterMinimization: {},
       finalStateAfterMinimization: [],
+
+      axios,
+      // base url for api
+      url: "http://127.0.0.1:8000/api",
     };
   },
 
@@ -284,10 +395,153 @@ export default {
   },
 
   methods: {
+    async getListFromDatabases() {
+      try {
+        const { data } = await this.axios.get(`${this.url}/automata`);
+        this.dataFromDatabases = data;
+
+        this.displayDialog = !this.displayDialog;
+      } catch (error) {
+        console.log(error);
+      }
+    },
+
+    async deleteFiniteAutomata(FA) {
+      try {
+        await this.axios.delete(`${this.url}/automata/${FA.id}`);
+        const { data } = await this.axios.get(`${this.url}/automata`);
+        this.dataFromDatabases = data;
+      } catch (error) {
+        console.log(error);
+      }
+    },
+
+    clearForm() {
+      this.state = null;
+      this.startState = null;
+      this.finalState = [];
+      this.symbol = null;
+      this.symbols = [];
+      this.array = {};
+      this.testFA = false;
+      this.epsilons = {};
+      this.finiteAutomata = null;
+      this.stringProcess = null;
+      this.results = [];
+      this.stateMinimization = [];
+      this.interaction = [];
+      this.Iter2 = [];
+      this.stateConvertNfa = null;
+      this.arrayConvertNfa = {};
+      this.finalStateConvertNfa = [];
+      this.stateAfterMinimization = null;
+      this.arrayAfterMinimization = {};
+      this.finalStateAfterMinimization = [];
+      this.convertFromNFAtoDFA = false;
+      this.minimizationStatus = false;
+    },
+
+    loadFiniteAutomata(FA) {
+      this.state = FA.number_of_state;
+      this.startState = FA.start_state;
+      this.finalState = FA.final_state;
+      this.symbol = FA.number_of_symbol;
+      this.symbols = FA.symbol;
+      this.array = FA.transaction;
+      this.epsilons = FA.transaction_epsilon;
+
+      this.displayDialog = !this.displayDialog;
+
+      if (Object.keys(this.epsilons).length > 0) {
+        this.useEpsilon = true;
+      }
+    },
+
+    editFiniteAutomata(FA) {
+      this.IdTmpForUpdate = FA.id;
+
+      this.state = FA.number_of_state;
+      this.startState = FA.start_state;
+      this.finalState = FA.final_state;
+      this.symbol = FA.number_of_symbol;
+      this.symbols = FA.symbol;
+      this.array = FA.transaction;
+      this.epsilons = FA.transaction_epsilon;
+
+      this.displayDialog = !this.displayDialog;
+      if (Object.keys(this.epsilons).length > 0) {
+        this.useEpsilon = true;
+      }
+      this.EditingFA = true;
+    },
+
+    //save to database
+    async saveToDatabase(status) {
+      if (
+        this.state &&
+        this.symbols &&
+        this.array &&
+        this.symbol &&
+        this.startState &&
+        this.finalState
+      ) {
+        try {
+          if (status === "update") {
+            const { data } = await this.axios.put(
+              `${this.url}/automata/${this.IdTmpForUpdate}`,
+              {
+                number_of_state: this.state,
+                start_state: this.startState,
+                final_state: this.finalState,
+                number_of_symbol: this.symbol,
+                symbol: this.symbols,
+                transaction: this.array,
+                transaction_epsilon: this.epsilons,
+              }
+            );
+            if (data) {
+              this.alertMessage(
+                `successful update on id ${this.IdTmpForUpdate} `
+              );
+              this.EditingFA = false;
+              this.state = null;
+              this.startState = null;
+              this.finalState = [];
+              this.symbol = null;
+              this.symbols = [];
+              this.array = {};
+            } else {
+              this.alertMessage("Fail update", "error");
+            }
+          } else {
+            const { data } = await this.axios.post(`${this.url}/automata`, {
+              number_of_state: this.state,
+              start_state: this.startState,
+              final_state: this.finalState,
+              number_of_symbol: this.symbol,
+              symbol: this.symbols,
+              transaction: this.array,
+              transaction_epsilon: this.epsilons,
+            });
+            if (data) {
+              this.alertMessage("successful save to databases");
+            } else {
+              this.alertMessage("Fail save to databases", "error");
+            }
+          }
+        } catch (error) {
+          console.log(error);
+          this.alertMessage("Fail save to databases", "error");
+        }
+      } else {
+        this.alertMessage(
+          "can not save to database, please fill the input or select",
+          "error"
+        );
+      }
+    },
     // function for test if FA is DFA or NFA
     Test_FA_is_DFA_or_NFA() {
-      window.localStorage.setItem("name", "Obaseki Nosasasdj" + this.state);
-
       if (this.array && this.startState && this.finalState) {
         let NFA = Object.keys(this.array).find((key) =>
           this.array[key].includes(",")
@@ -444,6 +698,7 @@ export default {
       this.finalStateAfterMinimization = tmpFinalState;
 
       this.minimizationStatus = true;
+      this.convertFromNFAtoDFA = false;
     },
 
     // minimization step 3
@@ -666,7 +921,6 @@ export default {
         object[i] = this.convertNFAtoDFA(this.results[i], true);
       }
       //  object; /// [ [ [] ] ]
-      // console.log(object);
 
       // declare array for transaction
       let array = {};
@@ -705,6 +959,7 @@ export default {
         this.arrayConvertNfa = array;
         this.finalStateConvertNfa = finalStates;
         this.convertFromNFAtoDFA = true;
+        this.minimizationStatus = false;
       } else {
         // if noCalculate == null ro false it mean calculate NFA
         this.calculateDFA(array, finalStates);
@@ -749,7 +1004,6 @@ export default {
               // if item === stateTran
             }
           } // for item
-
           // if doesn't have transaction, EX: Q0->a and no state,
           // so just use the Epsilon,
           // and if Eps no state we also don't move the state
@@ -769,22 +1023,15 @@ export default {
                 NewStates.push(this.epsilons[item]);
               }
             }
-
-            // if NewStates doesn't have EmptySet, just store it
-            if (!NewStates.find((item) => item === "EmptySet")) {
-              if (!NewStates.length > 0) {
-                NewStates.push("EmptySet");
-              }
+            if (NewStates.length <= 0) {
+              NewStates.push("EmptySet");
             }
           }
         } // for states [] array
 
         NewStates = this.getStateEps(NewStates);
-        const check = this.checkIfAlreadyHave(convertNFA, NewStates);
-        if (!check) {
-          // NewStates = [ Q0 , Q1 , Q2 ]
-          convertNFA.push(NewStates);
-        }
+
+        convertNFA.push(NewStates);
       } // for i
 
       // if getReturn == null || false
@@ -844,7 +1091,7 @@ export default {
 
         if (!sateHasTran) {
           if (!tempState.find((item) => item === "EmptySet")) {
-            if (!tempState.length > 0) {
+            if (tempState.length <= 0) {
               tempState.push("EmptySet");
             }
           }
