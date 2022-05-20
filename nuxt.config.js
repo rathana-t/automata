@@ -41,11 +41,12 @@ export default {
     // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
     plugins: [{
         src: '~/plugins/primevue.js',
-        src: "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js",
-        src: "https://cdnjs.cloudflare.com/ajax/libs/dagre-d3/0.6.4/dagre-d3.min.js",
-        src: "https://cdnjs.cloudflare.com/ajax/libs/d3/5.15.0/d3.min.js",
-        src: "https://cdn.jsdelivr.net/npm/tipsy-1a@1.0.0/src/javascripts/jquery.tipsy.min.js",
-        src: '~/assets/js/script.js',
+        // src: '~/plugins/mermaid.js',
+        // src: "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js",
+        // src: "https://cdnjs.cloudflare.com/ajax/libs/dagre-d3/0.6.4/dagre-d3.min.js",
+        // src: "https://cdnjs.cloudflare.com/ajax/libs/d3/5.15.0/d3.min.js",
+        // src: "https://cdn.jsdelivr.net/npm/tipsy-1a@1.0.0/src/javascripts/jquery.tipsy.min.js",
+        // src: '~/assets/js/script.js',
     }],
 
     // Auto import components: https://go.nuxtjs.dev/config-components

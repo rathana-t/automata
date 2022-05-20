@@ -29,7 +29,7 @@
         <div class="h-10">
           <div v-for="i in states" :key="i.id" class="flex justify-start">
             <p
-              v-for="item in testSymbol(i - 1)"
+              v-for="item in transaction(i - 1)"
               :key="item"
               class="w-full h-10 border border-black py-auto pt-1"
             >
@@ -68,7 +68,7 @@ export default {
   },
 
   methods: {
-    testSymbol(index) {
+    transaction(index) {
       let num = [];
       for (let i = 0; i < this.symbols.length; i++) {
         num[i] = `Q${index}` + this.symbols[i];

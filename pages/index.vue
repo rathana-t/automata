@@ -619,7 +619,6 @@ export default {
           }
         }
       }
-      // console.log("ValueHalfTriangle");
       // console.log(ValueHalfTriangle);
       const Iter1 = [];
       for (let k = 0; k < ValueHalfTriangle.length; k++) {
@@ -635,7 +634,6 @@ export default {
         }
       }
 
-      // console.log("Iter1");
       // console.log(Iter1);
       // copy array
       this.interaction = Iter1.slice();
@@ -645,7 +643,6 @@ export default {
         // console.log("this.Iter2");
       }
       this.interaction.sort();
-      // console.log("this.interaction");
       // console.log(this.interaction);
 
       let mini = this.getMinimizationStep3(
@@ -653,8 +650,7 @@ export default {
         arrayRow,
         arrayColumn
       );
-      console.log("mini");
-      console.log(mini);
+      // console.log(mini);
 
       this.getResultOfMinimization(mini);
     },
