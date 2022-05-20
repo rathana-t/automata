@@ -30,7 +30,11 @@
           <td class="border-collapse border">{{ item.symbol }}</td>
           <td class="border-collapse border w-96">{{ item.transaction }}</td>
           <td class="border-collapse border w-52">
-            {{ item.transaction_epsilon }}
+            {{
+              Object.keys(item.transaction_epsilon).length > 0
+                ? item.transaction_epsilon
+                : " "
+            }}
           </td>
           <td class="border-collapse border">
             <div class="flex justify-evenly">
@@ -160,64 +164,128 @@
         </div>
       </div>
 
-      <div v-if="!loading" class="w-full flex justify-center">
+      <div v-if="!loading" class="w-full flex justify-between space-x-10">
         <div>
-          <Button
-            class="p-button p-button-sm py-5"
-            :class="useEpsilon ? 'p-button-danger' : ''"
-            @click="showColumnEpsilons()"
-            >{{ !useEpsilon ? "Use" : "Remove" }} Epsilon( ε )</Button
-          >
-          <div class="flex text-center">
-            <div>
-              <div class="border border-gray-600 h-10 p-2 py-1">
-                States \ Symbols
-              </div>
-              <div
-                v-for="index in state"
-                :key="index.id"
-                class="border border-gray-600 h-10 py-1"
-              >
-                Q<sub>{{ index - 1 }}</sub>
-              </div>
-            </div>
-            <div>
-              <div class="flex justify-start h-10">
-                <p
-                  v-for="item in symbols"
-                  :key="item.id"
-                  class="border border-gray-600 w-20 py-1"
+          <div>
+            <Button
+              class="p-button p-button-sm py-5"
+              :class="useEpsilon ? 'p-button-danger' : ''"
+              @click="showColumnEpsilons()"
+              >{{ !useEpsilon ? "Use" : "Remove" }} Epsilon( ε )</Button
+            >
+            <div class="flex text-center">
+              <div>
+                <div class="border border-gray-600 h-10 p-2 py-1">
+                  States \ Symbols
+                </div>
+                <div
+                  v-for="index in state"
+                  :key="index.id"
+                  class="border border-gray-600 h-10 py-1"
                 >
-                  {{ item }}
-                </p>
-                <p v-if="useEpsilon" class="border border-gray-600 w-20 py-1">
-                  Epsilon
-                </p>
+                  Q<sub>{{ index - 1 }}</sub>
+                </div>
               </div>
-              <div class="h-10">
-                <div v-for="i in state" :key="i.id" class="flex justify-start">
-                  <input-text
-                    v-for="item in getTheTransaction(i - 1)"
-                    :key="item"
-                    type="text"
-                    :placeholder="item"
-                    v-model="array[item]"
-                    class="h-10 w-20"
-                  />
-                  <div v-if="useEpsilon">
+              <div>
+                <div class="flex justify-start h-10">
+                  <p
+                    v-for="item in symbols"
+                    :key="item.id"
+                    class="border border-gray-600 w-20 py-1"
+                  >
+                    {{ item }}
+                  </p>
+                  <p v-if="useEpsilon" class="border border-gray-600 w-20 py-1">
+                    Epsilon
+                  </p>
+                </div>
+                <div class="h-10">
+                  <div
+                    v-for="i in state"
+                    :key="i.id"
+                    class="flex justify-start"
+                  >
                     <input-text
-                      v-for="item in getEpsilon(i - 1)"
+                      v-for="item in getTheTransaction(i - 1)"
                       :key="item"
                       type="text"
                       :placeholder="item"
-                      v-model="epsilons[item]"
+                      v-model="array[item]"
                       class="h-10 w-20"
                     />
+                    <div v-if="useEpsilon">
+                      <input-text
+                        v-for="item in getEpsilon(i - 1)"
+                        :key="item"
+                        type="text"
+                        :placeholder="item"
+                        v-model="epsilons[item]"
+                        class="h-10 w-20"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+          <div
+            v-if="!EditingFA && !loading"
+            class="flex flex-col mx-auto w-96 mt-10 space-y-5"
+          >
+            <div>
+              <p>Process String</p>
+              <div>
+                <InputText type="text" v-model="stringProcess" class="h-10" />
+                <Button
+                  class="p-button p-button-sm"
+                  @click="calculate()"
+                  icon="pi pi-chevron-circle-right"
+                  label="Process String"
+                >
+                </Button>
+              </div>
+            </div>
+            <div class="space-x-2">
+              <Button
+                class="p-button p-button-sm"
+                @click="Test_FA_is_DFA_or_NFA()"
+                >Test FA</Button
+              >
+              <Button
+                v-if="testFA"
+                :disabled="finiteAutomata === 'NFA'"
+                class="p-button p-button-sm"
+                @click="minimization()"
+                >Minimization</Button
+              >
+              <Button
+                v-if="testFA"
+                :disabled="finiteAutomata === 'DFA'"
+                class="p-button p-button-sm"
+                @click="calculateNFA(true)"
+                >Convert NFA to DFA
+              </Button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="flex justify-end">
+            <Button
+              @click="showGraph = !showGraph"
+              class="p-button-sm float-right"
+              :class="showGraph ? 'p-button-danger' : ''"
+              >{{ showGraph ? "Remove Graph" : "Generate Graph" }}
+            </Button>
+          </div>
+          <graph
+            v-if="showGraph"
+            :startState="startState"
+            :symbols="symbols"
+            :epsilons="epsilons"
+            :array="array"
+            :states="state"
+            :finalState="finalState"
+          />
         </div>
       </div>
       <div v-else class="flex justify-center">
@@ -228,39 +296,6 @@
             fill="#EEEEEE"
           />
           <p>waiting user input</p>
-        </div>
-      </div>
-      <div
-        v-if="!EditingFA && !loading"
-        class="flex flex-col mx-auto w-96 mt-10 space-y-5"
-      >
-        <div>
-          <p>Process String</p>
-          <div>
-            <InputText type="text" v-model="stringProcess" class="h-10" />
-            <Button class="p-button p-button-sm" @click="calculate()"
-              >Process String
-            </Button>
-          </div>
-        </div>
-        <div class="space-x-2">
-          <Button class="p-button p-button-sm" @click="Test_FA_is_DFA_or_NFA()"
-            >Test FA</Button
-          >
-          <Button
-            v-if="testFA"
-            :disabled="finiteAutomata === 'NFA'"
-            class="p-button p-button-sm"
-            @click="minimization()"
-            >Minimization</Button
-          >
-          <Button
-            v-if="testFA"
-            :disabled="finiteAutomata === 'DFA'"
-            class="p-button p-button-sm"
-            @click="calculateNFA(true)"
-            >Convert NFA to DFA
-          </Button>
         </div>
       </div>
     </div>
@@ -304,14 +339,16 @@
 <script>
 import axios from "axios";
 import result from "../components/result.vue";
+import Graph from "../components/graph.vue";
 export default {
-  components: { result },
+  components: { result, Graph },
   name: "IndexPage",
   data() {
     return {
       dataFromDatabases: null,
       displayDialog: false,
       EditingFA: false,
+      showGraph: false,
       IdTmpForUpdate: null,
 
       testFA: false,
