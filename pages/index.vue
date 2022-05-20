@@ -310,7 +310,7 @@
     <div class="mt-10">
       <div v-if="convertFromNFAtoDFA">
         <h1 class="text-center text-5xl font-bold">
-          Result for converting form NAF to DFA
+          Result for converting from NFA to DFA
         </h1>
         <result
           :startState="startState"
